@@ -1,4 +1,5 @@
 #include <cstring>
+#include <mutex>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -7,8 +8,13 @@
 #include <string.h>
 #include <vector>
 #include <thread>
+#include <mutex>
+#include <vector>
 
 #define BUFFER_SIZE 1024
+
+std::vector<int>clientSockets;
+std::mutex clientMutex;
 
 void handle_client(int clientSocket) {
     char buffer[BUFFER_SIZE] = {0};
@@ -23,8 +29,12 @@ void handle_client(int clientSocket) {
         buffer[bytesReceived] = '\0';
         std::cout << "Message from client: " << buffer << std::endl;
 
-        std::string response = "Message received";
-        send(clientSocket, response.c_str(), response.size(), 0);
+        std::lock_guard<std::mutex> lock(clientMutex);
+        for (auto& socket : clientSockets) {
+            if (socket != clientSocket) {
+                send(socket, buffer, strlen(buffer), 0);
+            }
+        }
     }
 
     // close connection
@@ -68,11 +78,16 @@ int main(){
             return 1;
         }
 
-        std::cout << "Client connected" << std::endl;
+        std::cout << "Client "  << clientSocket <<  " connected" << std::endl;
 
-        // Handle client in a separate function
-        threads.emplace_back(std::thread(handle_client, clientSocket));
-        threads.back().detach(); // Detach the thread to handle multiple clients concurrently
+        {
+            std::lock_guard<std::mutex> lock(clientMutex);
+            clientSockets.push_back(clientSocket);
+        }
+
+        threads.emplace_back(handle_client, clientSocket);
+        threads.back().detach();
+
     }
 
     close(serverSocket);

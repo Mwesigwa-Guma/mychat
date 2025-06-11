@@ -48,7 +48,7 @@ int main()
 
     while(true){
         std::getline(std::cin, input);
-        if(input == "exit") break;
+        if(strcmp(input.c_str(), "exit") == 0) break;
         if (send(clientSocket, input.c_str(), input.size(), 0) < 0) {
             std::cerr << "Sending message failed\n";
             close(clientSocket);

@@ -10,6 +10,7 @@
 #include <thread>
 #include <mutex>
 #include <vector>
+#include "../common/common.hpp"
 
 #define BUFFER_SIZE 1024
 
@@ -43,31 +44,7 @@ void handle_client(int clientSocket) {
 
 int main(){
     char buffer[BUFFER_SIZE] = {0};
-    int size = 1; // Number of clients to handle
-    int serverSocket = socket(AF_INET, SOCK_STREAM , 0);
-
-    if (serverSocket < 0) {
-        std::cerr << "Failed to create socket" << std::endl;
-        return 1;
-    }
-
-    sockaddr_in serverAddress;
-    serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(8080);
-    serverAddress.sin_addr.s_addr = INADDR_ANY;
-
-    if (bind(serverSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0) {
-        std::cerr << "Bind failed" << std::endl;
-        close(serverSocket);
-        return 1;
-    }
-
-    if (listen(serverSocket, 5) < 0) {
-        std::cerr << "Listen failed" << std::endl;
-        close(serverSocket);
-        return 1;
-    }
-
+    int serverSocket = create_server_socket(8080); 
     std::vector<std::thread> threads;
 
     while(true){

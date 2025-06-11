@@ -1,10 +1,28 @@
 // C++ program to illustrate the client application in the
 // socket programming
 #include <cstring>
-#include <iostream>
-#include <netinet/in.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <unistd.h>
+#include <iostream>
+#include <string.h>
+#include <thread>
+
+#define BUFFER_SIZE 1024
+
+void receive_messages(int sock) {
+    char buffer[BUFFER_SIZE];
+    while (true) {
+        memset(buffer, 0, BUFFER_SIZE);
+        int bytes_received = recv(sock, buffer, BUFFER_SIZE, 0);
+        if (bytes_received <= 0) {
+            std::cout << "[*] Connection closed by server or error occurred.\n";
+            break;
+        }
+        std::cout << "[Server] " << buffer << std::endl;
+    }
+}
 
 int main()
 {
@@ -25,27 +43,22 @@ int main()
         return 1;
     }
 
-    // sending data
-    const char* message = "Hello, server!";
-    if (send(clientSocket, message, strlen(message), 0) < 0) {
-        std::cerr << "Sending message failed\n";
-        close(clientSocket);
-        return 1;
-    }
+    std::thread receiver(receive_messages, clientSocket);
+    std::string input;
 
-    // receiving response
-    char buffer[1024] = {0};
-    ssize_t bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
-    if (bytesReceived < 0) {
-        std::cerr << "Receiving message failed\n";
-        close(clientSocket);
-        return 1;
+    while(true){
+        std::getline(std::cin, input);
+        if(input == "exit") break;
+        if (send(clientSocket, input.c_str(), input.size(), 0) < 0) {
+            std::cerr << "Sending message failed\n";
+            close(clientSocket);
+            return 1;
+        }
     }
-
-    std::cout << "Server response: " << std::string(buffer, bytesReceived) << "\n";
 
     // closing socket
     close(clientSocket);
+    receiver.join();
 
     return 0;
 }

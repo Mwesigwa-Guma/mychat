@@ -7,7 +7,6 @@
 #include <string.h>
 #include <vector>
 #include <thread>
-#include <vector>
 
 #define BUFFER_SIZE 1024
 

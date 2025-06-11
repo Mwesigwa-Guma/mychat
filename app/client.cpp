@@ -32,6 +32,18 @@ int main()
         close(clientSocket);
         return 1;
     }
+
+    // receiving response
+    char buffer[1024] = {0};
+    ssize_t bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
+    if (bytesReceived < 0) {
+        std::cerr << "Receiving message failed\n";
+        close(clientSocket);
+        return 1;
+    }
+
+    std::cout << "Server response: " << std::string(buffer, bytesReceived) << "\n";
+
     // closing socket
     close(clientSocket);
 
